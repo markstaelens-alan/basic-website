@@ -1,24 +1,28 @@
 import { useState } from 'react';
-import { FORMSPREE_FORM_ID } from '../config.js';
+import { supabase } from '../supabase.js';
 
 export default function Contact() {
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!FORMSPREE_FORM_ID) {
+    if (!supabase) {
       setStatus('unconfigured');
       return;
     }
     setStatus('sending');
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
     try {
-      const res = await fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: new FormData(e.target),
+      // Add one row to the contact_messages table.
+      const { error } = await supabase.from('contact_messages').insert({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        business: data.business.trim() || null,
+        message: data.message.trim(),
       });
-      if (!res.ok) throw new Error('Request failed');
-      e.target.reset();
+      if (error) throw error;
+      form.reset();
       setStatus('sent');
     } catch {
       setStatus('error');
@@ -36,19 +40,19 @@ export default function Contact() {
       <form className="contact-form" onSubmit={handleSubmit}>
         <label>
           Name
-          <input name="name" type="text" required autoComplete="name" />
+          <input name="name" type="text" required maxLength={200} autoComplete="name" />
         </label>
         <label>
           Email
-          <input name="email" type="email" required autoComplete="email" />
+          <input name="email" type="email" required maxLength={320} autoComplete="email" />
         </label>
         <label>
           Business name
-          <input name="business" type="text" autoComplete="organization" />
+          <input name="business" type="text" maxLength={200} autoComplete="organization" />
         </label>
         <label>
           What would you like to automate?
-          <textarea name="message" rows="5" required />
+          <textarea name="message" rows="5" required maxLength={5000} />
         </label>
         <button type="submit" className="btn btn-primary" disabled={status === 'sending'}>
           {status === 'sending' ? 'Sending…' : 'Send message'}

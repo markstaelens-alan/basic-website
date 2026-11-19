@@ -24,6 +24,5 @@ Every push to `main` builds and deploys automatically via
 "Source" must be set to **GitHub Actions**.
 
 ## Contact form
-The form uses [Formspree](https://formspree.io) (free tier). Create a form
-there, then paste its ID into `FORMSPREE_FORM_ID` in `src/config.js`.
-Submissions will be emailed to you.
+The form saves messages to the Supabase table `contact_messages`
+(see `supabase/migrations/`). Read them in Supabase → Table Editor.
